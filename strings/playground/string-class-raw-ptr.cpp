@@ -1,76 +1,102 @@
 #include <iostream>
-#include <string.h>
+#include <cstring>
 
 using namespace std;
 
 class myString
 {
     char *coreBuf = nullptr;
-    size_t size;
+    size_t bufferSize;
 
 public:
-    myString() : coreBuf(nullptr), size(0) {}
+    myString() : coreBuf(nullptr), bufferSize(0) {}
 
     myString(const char *buffer)
     {
-        size = strlen(buffer);
-        coreBuf = new char[size + 1];
-        strncpy(coreBuf, buffer, size);
+        bufferSize = strlen(buffer);
+        coreBuf = new char[bufferSize + 1];
+        strcpy(coreBuf, buffer);
     }
 
-    myString(const myString &rhs)
-    {
-        size = rhs.size;
-        coreBuf = new char[size + 1];
-        strncpy(coreBuf, rhs.coreBuf, size);
-    }
+    myString(const myString &cc) : myString(cc.c_str()) {}
 
-    myString &operator=(const myString &rhs)
+    myString &operator=(const myString &buffer)
     {
-        size = rhs.size;
-        coreBuf = new char[size + 1];
-        strncpy(coreBuf, rhs.coreBuf, size);
-
+        if (this != &buffer)
+        {
+            delete[] coreBuf;
+            bufferSize = buffer.bufferSize;
+            coreBuf = new char[bufferSize + 1];
+            strcpy(coreBuf, buffer.coreBuf);
+        }
         return *this;
     }
 
-    myString(myString &&dyingRhs)
+    myString(myString &&buffer)
     {
-        size = dyingRhs.size;
-        coreBuf = dyingRhs.coreBuf;
-        dyingRhs.coreBuf = nullptr;
+        coreBuf = buffer.coreBuf;
+        buffer.coreBuf = nullptr;
+        bufferSize = buffer.bufferSize;
+        buffer.bufferSize = 0;
     }
 
-    myString &operator=(myString &&dyingRhs)
+    myString &operator=(myString &&buffer)
     {
-        size = dyingRhs.size;
-        coreBuf = dyingRhs.coreBuf;
-        dyingRhs.coreBuf = nullptr;
-
+        if (this != &buffer)
+        {
+            delete[] coreBuf;
+            coreBuf = buffer.coreBuf;
+            buffer.coreBuf = nullptr;
+            bufferSize = buffer.bufferSize;
+            buffer.bufferSize = 0;
+        }
         return *this;
     }
 
     myString operator+(const myString &rhs)
     {
         myString tmp;
-
-        tmp.size = this->size + rhs.size;
-        tmp.coreBuf = new char[tmp.size + 1];
-
-        strncpy(tmp.coreBuf, this->coreBuf, this->size);
-        strncpy(tmp.coreBuf + this->size, rhs.coreBuf, rhs.size);
-
+        tmp.bufferSize = this->bufferSize + rhs.bufferSize;
+        tmp.coreBuf = new char[tmp.bufferSize + 1];
+        strcpy(tmp.coreBuf, this->coreBuf ? this->coreBuf : "");
+        strcat(tmp.coreBuf, rhs.coreBuf);
         return tmp;
     }
 
-    int getSize() const
+    myString operator+(const char *rhs)
     {
-        return size;
+        myString tmp;
+        tmp.bufferSize = this->bufferSize + strlen(rhs);
+        tmp.coreBuf = new char[tmp.bufferSize + 1];
+        strcpy(tmp.coreBuf, this->coreBuf ? this->coreBuf : "");
+        strcat(tmp.coreBuf, rhs);
+        return tmp;
+    }
+
+    bool operator==(const myString &rhs) const
+    {
+        return (strcmp(this->coreBuf, rhs.coreBuf) == 0);
+    }
+
+    bool operator!=(const myString &rhs) const
+    {
+        return !(*this == rhs);
+    }
+
+    char &operator[](size_t idx)
+    {
+        if (0 <= idx < bufferSize)
+            return coreBuf[idx];
+    }
+
+    size_t size() const
+    {
+        return coreBuf ? bufferSize : 0;
     }
 
     const char *c_str() const
     {
-        return coreBuf;
+        return coreBuf ? coreBuf : "";
     }
 
     ~myString()
@@ -82,21 +108,14 @@ public:
     {
         if (coreBuf != nullptr)
             delete[] coreBuf;
-        size = 0;
+        bufferSize = 0;
     }
 };
-
-std::ostream &operator<<(std::ostream &cout, const myString &obj)
-{
-    cout << obj.c_str();
-    return cout;
-}
 
 int main()
 {
 
-    myString obj("myString");
-
+    myString obj("abc");
     cout << obj.c_str() << endl;
 
     myString s2(obj);
@@ -105,8 +124,16 @@ int main()
     myString s3 = s2;
     cout << s3.c_str() << endl;
 
-    myString s4 = s2 + " impl";
+    myString s4 = s2 + " def";
     cout << s4.c_str() << endl;
+
+    myString s5 = s2 + s4;
+    cout << s5.c_str() << endl;
+
+    if (s3 == s2)
+        cout << "==" << endl;
+    if (s4 != s5)
+        cout << "!=" << endl;
 
     return 0;
 }
