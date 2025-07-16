@@ -41,7 +41,7 @@ public:
         dyingRhs.coreBuf = nullptr;
     }
 
-    myString &operator=(myString &dyingRhs)
+    myString &operator=(myString &&dyingRhs)
     {
         size = dyingRhs.size;
         coreBuf = dyingRhs.coreBuf;
