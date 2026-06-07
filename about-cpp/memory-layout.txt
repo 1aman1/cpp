@@ -1,0 +1,15 @@
+High Address
+---------------------
+| Command-line args  |
+| Environment vars    |
+| Stack (local vars)  |  ← grows downward
+---------------------
+| Heap (malloc/new)   |  ← grows upward
+---------------------
+| BSS (uninit globals)|
+| Data (init globals) |
+| Read-only consts    |
+---------------------
+| Code / text segment |
+---------------------
+Low Address

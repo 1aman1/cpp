@@ -1,0 +1,218 @@
+ ┌───────────────────────────────────────────────────────────┐
+ │                        Source Code                        │
+ │                    main.cpp, foo.cpp, bar.cpp              │
+ └───────────────────────────────────────────────────────────┘
+                         │
+                         ▼
+        [1️⃣ Preprocessing] → Handles macros & includes
+        ------------------------------------------------
+        • Expands #include files
+        • Replaces #define macros
+        • Removes comments, conditionals (#ifdef/#endif)
+        Output: main.i  (pure C++ code, no macros)
+                         │
+                         ▼
+        [2️⃣ Compilation] → Converts code to Assembly
+        ------------------------------------------------
+        • Syntax & semantic checking
+        • Template instantiation
+        • Generates assembly code
+        Output: main.s
+                         │
+                         ▼
+        [3️⃣ Assembling] → Converts assembly to object code
+        ------------------------------------------------
+        • Machine instructions generated
+        • Symbol table created (.text, .data, .bss)
+        Output: main.o (binary object file)
+                         │
+                         ▼
+        [4️⃣ Linking] → Combines all object files + libraries
+        ------------------------------------------------
+        • Resolves external symbols
+        • Merges code & data sections
+        • Adds library dependencies
+        Output: executable (e.g. a.out / app)
+
+
+
+
+When you compile a C++ program like:
+
+g++ main.cpp -o app
+
+
+the compiler internally performs 4 main stages:
+
+Preprocessing → Compilation → Assembly → Linking
+
+
+Let’s break each one down in order 👇
+
+🧩 1️⃣ Preprocessing (cpp phase)
+
+🔹 Tool: The C preprocessor
+🔹 Input: .cpp file
+🔹 Output: Expanded source file (.i)
+
+What Happens:
+
+Handles directives like:
+
+#include → expands included headers inline
+
+#define / #undef → macro expansion/removal
+
+#if, #ifdef, #ifndef → conditional compilation
+
+Removes comments
+
+Example:
+#include <iostream>
+#define SQUARE(x) (x*x)
+
+int main() {
+    std::cout << SQUARE(5);
+}
+
+
+becomes (after preprocessing):
+
+int main() {
+    std::cout << (5*5);
+}
+
+
+🔹 Command (optional):
+
+g++ -E main.cpp -o main.i
+
+🧱 2️⃣ Compilation (actual compiler front-end)
+
+🔹 Tool: Compiler proper (e.g., cc1plus)
+🔹 Input: Preprocessed .i file
+🔹 Output: Assembly .s file
+
+What Happens:
+
+Parses the code → builds an AST (Abstract Syntax Tree)
+
+Performs semantic analysis (type checking, scope resolution, etc.)
+
+Optimizes intermediate code (constant folding, dead code elimination)
+
+Generates assembly instructions for the target CPU (e.g., x86-64)
+
+🔹 Command:
+
+g++ -S main.i -o main.s
+
+
+So C++ code like:
+
+int add(int a, int b) { return a + b; }
+
+
+turns into:
+
+add:
+    lea eax, [rdi + rsi]
+    ret
+
+⚙️ 3️⃣ Assembly
+
+🔹 Tool: Assembler (as)
+🔹 Input: Assembly .s file
+🔹 Output: Object file .o
+
+What Happens:
+
+Converts human-readable assembly → machine code
+
+Produces relocatable object file (.o / .obj)
+
+Keeps symbol tables (function and variable names)
+
+🔹 Command:
+
+g++ -c main.s -o main.o
+
+🔗 4️⃣ Linking
+
+🔹 Tool: Linker (ld)
+🔹 Input: One or more object files + libraries
+🔹 Output: Final executable (ELF on Linux, PE on Windows)
+
+What Happens:
+
+Symbol Resolution
+
+Matches function/variable references across files
+
+E.g., main.o calls std::cout → resolved in libstdc++.a
+
+Relocation
+
+Assigns final memory addresses to code and data sections
+
+Static Linking
+
+Copies required code from .a libraries into executable
+
+Dynamic Linking
+
+Records dependency on .so / .dll files to load at runtime
+
+🔹 Command:
+
+g++ main.o -o app
+
+🧠 Bonus: Runtime Loading (after compilation)
+
+When you run:
+
+./app
+
+
+The loader (part of OS):
+
+Loads executable into memory
+
+Maps code, data, stack, heap sections
+
+Resolves dynamic libraries (using PLT/GOT)
+
+Transfers control to main()
+
+🧩 Summary Table
+Phase	Tool	Input → Output	Major Tasks
+Preprocessing	cpp	.cpp → .i	Expand macros, includes, remove comments
+Compilation	cc1plus	.i → .s	Parse, type-check, optimize, generate assembly
+Assembly	as	.s → .o	Translate to machine code
+Linking	ld	.o → executable	Combine, resolve symbols, assign addresses
+🧠 Interview Add-ons
+
+Static vs Dynamic linking
+
+Static → .a code copied inside binary
+
+Dynamic → .so resolved at runtime
+
+Incremental linking used by IDEs for faster builds
+
+One-line compilation (g++ main.cpp) implicitly runs all four phases
+
+You can stop after any phase with flags like:
+
+-E → stop after preprocessing
+
+-S → stop after compilation
+
+-c → stop after assembly (generate .o)
+
+
+
+g++ -E main.cpp -o main.i      # Preprocessing
+g++ -S main.i -o main.s        # Compilation
+as main.s -o main.o            # Assembly
+g++ main.o -o app              # Linking

@@ -1,0 +1,135 @@
+What happens when you #include a file?
+
+The preprocessor performs a textual inclusion — it literally copies the contents of the included file into your .cpp before compilation.
+
+This happens before compilation.
+
+If you include a large header, it increases Translation Unit (TU) size, which affects compile time.
+
+Example:
+#include "foo.h"
+
+
+→ The compiler behaves as if the contents of foo.h were pasted there.
+
+Hence:
+
+.h → included in .cpp (textually expanded)
+
+.cpp → should not be included (leads to ODR violations)
+
+⚙️ 2️⃣ extern, static, and inline
+Keyword	Meaning	Linkage	Storage	Typical Use
+extern	Declaration, not definition	External	Static duration	Declare a global defined elsewhere
+static	Limits visibility to this TU	Internal	Static duration	Avoid symbol conflicts
+inline	Allows multiple identical definitions across TUs	External (special)	Static duration	Header function definitions
+Example:
+// a.cpp
+int x = 10;          // definition
+
+// b.cpp
+extern int x;        // refers to same x (no redefinition)
+static int y = 20;   // internal linkage — separate y per TU
+inline void f() {}   // same f() allowed in many TUs
+
+🚫 3️⃣ Why multiple definition errors happen when including .cpp
+
+Each .cpp included creates another copy of the same function/variable in every translation unit.
+
+During linking, linker finds duplicate symbols → “multiple definition of …” error.
+
+This breaks the ODR (One Definition Rule) — every function/variable must have exactly one definition across the program.
+
+✅ Always include headers, never .cpp files.
+
+🔗 4️⃣ Dynamic vs Static Linking
+Type	When Linking Happens	Output	Pros	Cons
+Static	At compile/link time	Single self-contained binary	Faster load, no external deps	Larger binary, hard to patch
+Dynamic	At runtime (via loader)	Executable + .so/.dll	Smaller binary, easy updates	Dependency management, slower startup
+Example:
+# Static
+g++ main.o libmath.a -o app
+
+# Dynamic
+g++ main.o -lmath -o app
+
+🧩 5️⃣ Name Mangling & extern "C"
+
+C++ supports function overloading, so the compiler encodes function names with parameter info:
+
+void foo(int) → _Z3fooi
+void foo(double) → _Z3food
+
+
+(name mangling)
+
+C doesn’t support overloading — it expects simple names.
+
+So to call a C function from C++:
+
+extern "C" void c_func();
+
+
+This tells the compiler “don’t mangle the name”, ensuring linker compatibility with C libraries.
+
+💡 6️⃣ Why templates must be defined in headers
+
+Template code is compiled only when instantiated, not at definition time.
+
+If you put it in a .cpp:
+
+Other files including the declaration won’t see the definition
+
+Linker fails → “undefined reference” errors
+
+✅ Hence, define templates fully in headers.
+
+🧠 7️⃣ Sections of Memory
+Section	Stores	Lifetime	Example
+Text / Code	Compiled instructions	Whole program	Function bodies
+Data	Initialized globals/statics	Whole program	int g = 5;
+BSS	Uninitialized globals/statics	Whole program	int g;
+Heap	Dynamic memory (new, malloc)	Until freed	int* p = new int;
+Stack	Local vars, call frames	Until function returns	int a = 10;
+🧮 8️⃣ How VTable enables Runtime Polymorphism
+
+Each class with virtual functions gets a VTable (virtual table).
+
+It’s a table of function pointers to virtual methods.
+
+Each object stores a hidden pointer (vptr) to its class’s VTable.
+
+Example:
+struct Base { virtual void f() { } };
+struct Derived : Base { void f() override { } };
+
+Base* b = new Derived();
+b->f(); // compiler emits: b->vptr->f(b)
+
+
+→ VTable lookup happens at runtime, enabling dynamic dispatch.
+
+⚠️ 9️⃣ Compile-Time vs Link-Time vs Run-Time Errors
+Error Type	Detected By	Example	Cause
+Compile-time	Compiler	missing semicolon, type mismatch	Syntax or type errors
+Link-time	Linker	undefined reference to foo()	Missing definition, multiple defs
+Run-time	OS or CPU	Divide by zero, segfault	Logic or memory errors
+✅ Quick Interview Summary
+
+#include → textual inclusion → expands TU size
+
+extern = declaration, static = internal linkage, inline = ODR-safe across TUs
+
+Including .cpp violates ODR → linker conflict
+
+Dynamic vs static linking → runtime vs compile-time dependency
+
+Name mangling → for overloads; extern "C" disables it
+
+Templates in headers → need definition visible during instantiation
+
+Memory layout → text, data, BSS, heap, stack
+
+VTable → runtime dispatch via vptr
+
+Compile vs Link vs Run errors → different detection stages

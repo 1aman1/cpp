@@ -12,6 +12,7 @@ void addMoney()
         if (mtx.try_lock())
         {
             ++wallet;
+            std::cout << std::this_thread::get_id();
             mtx.unlock();
         }
     }

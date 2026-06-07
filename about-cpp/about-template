@@ -1,0 +1,58 @@
+🧩 Why templates must be defined in headers
+1️⃣ Template functions/classes are not compiled immediately
+
+When you write:
+
+template<typename T>
+void print(T val) {
+    std::cout << val;
+}
+
+
+the compiler does not generate code yet.
+It only creates a blueprint — the actual function is generated only when instantiated (i.e., used with a concrete type).
+
+print(10);     // instantiates print<int>
+print("hi");   // instantiates print<const char*>
+
+
+So each translation unit (TU) that uses print() needs access to the full definition to generate its own instantiation.
+
+2️⃣ If you define a template in a .cpp file
+// print.cpp
+template<typename T>
+void print(T val) {
+    std::cout << val;
+}
+
+
+and only declare it in a header:
+
+// print.h
+template<typename T>
+void print(T val);
+
+
+then when another file does:
+
+#include "print.h"
+print(10);
+
+
+👉 The compiler can’t find the definition — because it’s hidden in another TU (print.cpp), and templates are instantiated at compile time, not link time.
+Hence, you get:
+
+undefined reference to `void print<int>(int)`
+
+3️⃣ The correct way
+
+Put the full template definition in the header:
+
+// print.h
+#pragma once
+#include <iostream>
+
+template<typename T>
+void print(T val) {
+    std::cout << val;
+}
